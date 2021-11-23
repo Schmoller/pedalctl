@@ -4,6 +4,8 @@ project(pedalctl)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
 
+include_directories(libs)
+
 find_package(LibUsb REQUIRED)
 include_directories(${LIBUSB_1_INCLUDE_DIRS})
 
