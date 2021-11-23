@@ -9,6 +9,6 @@ include_directories(libs)
 find_package(LibUsb REQUIRED)
 include_directories(${LIBUSB_1_INCLUDE_DIRS})
 
-add_executable(pedalctl src/main.cpp)
+add_executable(pedalctl src/main.cpp src/command_list.cpp src/command_show.cpp)
 
 target_link_libraries(pedalctl ${LIBUSB_1_LIBRARIES})
