@@ -14,9 +14,11 @@ public:
 
     const std::string &getModel() const { return model; }
 
+    const std::string &getId() const { return id; }
 private:
     libusb_device_handle *handle {};
     std::string model;
+    std::string id;
 
     void init();
     bool readModel();

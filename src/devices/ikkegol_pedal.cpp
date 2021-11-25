@@ -27,7 +27,6 @@ std::vector<SharedIkkegolPedal> discoverIkkegolDevices() {
         if (libusb_get_device_descriptor(device, &descriptor) < 0) {
             continue;
         }
-
         if (descriptor.idVendor == VendorId && descriptor.idProduct == ProductId) {
             auto footPedal = std::make_shared<IkkegolPedal>(device);
             if (footPedal->isValid()) {
@@ -43,6 +42,12 @@ std::vector<SharedIkkegolPedal> discoverIkkegolDevices() {
 
 IkkegolPedal::IkkegolPedal(libusb_device *device) {
     libusb_open(device, &handle);
+
+    auto busId = libusb_get_bus_number(device);
+    auto deviceAddress = libusb_get_device_address(device);
+    char buffer[20];
+    std::sprintf(buffer, "%d:%d", busId, deviceAddress);
+    id = std::string(buffer);
 
     if (handle != nullptr) {
         init();
