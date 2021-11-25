@@ -1,5 +1,6 @@
 #include "ikkegol_protocol.hpp"
 #include "../configuration/keys.hpp"
+#include "../utils/usb_scancodes.hpp"
 
 #define MODIFIER(name) (packet.keyboard.modifiers & name) != 0
 
@@ -56,8 +57,18 @@ SharedConfiguration parseKeyboardConfig(const ConfigPacket &packet) {
         keys.emplace_back(KeyName::RightSuper);
     }
 
+    for (char key: packet.keyboard.keys) {
+        if (key == 0) {
+            break;
+        }
 
-    // TODO: regular keys
+        auto name = scanCodeToKey(key);
+        if (name != nullptr) {
+            keys.emplace_back(name);
+        }
+    }
+
+    // TODO: multi keys greater than 5. This is split up into multiple packets
     config->keys = keys;
     return config;
 }
