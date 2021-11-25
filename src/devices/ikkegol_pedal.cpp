@@ -1,5 +1,7 @@
 #include "ikkegol_pedal.hpp"
 #include "../utils/usb_interface_lock.hpp"
+#include "ikkegol_protocol.hpp"
+#include "../configuration/keyboard.hpp"
 #include <cstring>
 #include <chrono>
 #include <thread>
@@ -13,7 +15,6 @@ std::vector<SharedIkkegolPedal> discoverIkkegolDevices() {
     std::vector<SharedIkkegolPedal> devices;
 
     libusb_device **list;
-    libusb_device *found = nullptr;
 
     auto deviceCount = libusb_get_device_list(nullptr, &list);
     if (deviceCount < 0) {
@@ -38,6 +39,36 @@ std::vector<SharedIkkegolPedal> discoverIkkegolDevices() {
     libusb_free_device_list(list, 1);
 
     return devices;
+}
+
+SharedIkkegolPedal findIkkegolDevice(const std::string_view &id) {
+    libusb_device **list;
+    SharedIkkegolPedal found;
+
+    auto deviceCount = libusb_get_device_list(nullptr, &list);
+    if (deviceCount < 0) {
+        // TODO: it would be better to return an error here
+        return {};
+    }
+
+    for (auto index = 0; index < deviceCount; ++index) {
+        libusb_device *device = list[index];
+        libusb_device_descriptor descriptor;
+        if (libusb_get_device_descriptor(device, &descriptor) < 0) {
+            continue;
+        }
+        if (descriptor.idVendor == VendorId && descriptor.idProduct == ProductId) {
+            auto footPedal = std::make_shared<IkkegolPedal>(device);
+            if (footPedal->isValid() && footPedal->getId() == id) {
+                found = footPedal;
+                break;
+            }
+        }
+    }
+
+    libusb_free_device_list(list, 1);
+
+    return found;
 }
 
 IkkegolPedal::IkkegolPedal(libusb_device *device) {
@@ -108,4 +139,77 @@ bool IkkegolPedal::readModel() {
     std::string decoded(reinterpret_cast<char *>(versionBuffer), sectionsRead * 8);
     model = decoded;
     return true;
+}
+
+bool IkkegolPedal::load() {
+    if (!isValid()) {
+        return false;
+    }
+    USBInterfaceLock interfaceLock(handle, ConfigInterface);
+
+    if (!readPedals()) {
+        return false;
+    }
+
+    for (auto pedal = 0; pedal < pedalCount; ++pedal) {
+        pedalConfiguration[pedal] = readConfiguration(pedal);
+    }
+    return true;
+}
+
+SharedConfiguration IkkegolPedal::getConfiguration(uint32_t pedal) const {
+    if (pedal < pedalConfiguration.size()) {
+        return pedalConfiguration[pedal];
+    }
+    return {};
+}
+
+bool IkkegolPedal::readPedals() {
+    uint8_t request[8] = { 0x01, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
+    int wrote;
+    auto result = libusb_interrupt_transfer(
+        handle, ConfigEndpoint | LIBUSB_ENDPOINT_OUT, request, sizeof(request), &wrote, 100
+    );
+    if (wrote < 0 || result < 0) {
+        return false;
+    }
+
+    uint8_t buffer[8];
+    int read;
+    result = libusb_interrupt_transfer(handle, ConfigEndpoint | LIBUSB_ENDPOINT_IN, buffer, sizeof(buffer), &read, 100);
+    if (result < 0) {
+        return false;
+    }
+
+    // TODO: This is an assumption. It appears to hold so far
+    auto countPlusOne = buffer[0];
+
+    pedalCount = countPlusOne - 1;
+    pedalConfiguration.clear();
+    pedalConfiguration.resize(pedalCount);
+
+    return true;
+}
+
+SharedConfiguration IkkegolPedal::readConfiguration(uint32_t pedal) {
+    uint8_t request[8] = { 0x01, 0x82, 0x08, static_cast<uint8_t>(pedal + 1), 0x00, 0x00, 0x00, 0x00 };
+
+    int wrote;
+    auto result = libusb_interrupt_transfer(
+        handle, ConfigEndpoint | LIBUSB_ENDPOINT_OUT, request, sizeof(request), &wrote, 100
+    );
+    if (wrote < 0 || result < 0) {
+        return {};
+    }
+
+    uint8_t buffer[8];
+    int read;
+    result = libusb_interrupt_transfer(handle, ConfigEndpoint | LIBUSB_ENDPOINT_IN, buffer, sizeof(buffer), &read, 100);
+    if (result < 0) {
+        return {};
+    }
+
+    auto *packet = reinterpret_cast<ConfigPacket *>(buffer);
+    return parseConfig(*packet);
 }
