@@ -12,6 +12,8 @@ SharedConfiguration parseConfig(const ConfigPacket &packet) {
         case CT_KEYBOARD_MULTI:
         case CT_KEYBOARD_MULTI_ONCE:
             return parseKeyboardConfig(packet);
+        case CT_TEXT:
+            return parseTextConfig(packet);
         case CT_MOUSE:
             break;
         case CT_MEDIA:
@@ -69,7 +71,30 @@ SharedConfiguration parseKeyboardConfig(const ConfigPacket &packet) {
         }
     }
 
-    // TODO: multi keys greater than 5. This is split up into multiple packets
     config->keys = keys;
+    return config;
+}
+
+SharedConfiguration parseTextConfig(const ConfigPacket &packet) {
+    auto config = std::make_shared<TextConfiguration>();
+    auto length = packet.size - offsetof(ConfigPacket, string.string);
+    std::string text;
+
+    for (auto index = 0; index < length; ++index) {
+        int scanCode = packet.string.string[index];
+        if (scanCode == 0) {
+            break;
+        }
+
+        bool shift = (scanCode & 0x80) != 0;
+        scanCode = scanCode & 0x7f;
+
+        auto ch = scanCodeToPrintable(scanCode, shift);
+        if (ch != '\0') {
+            text.push_back(ch);
+        }
+    }
+
+    config->text = text;
     return config;
 }

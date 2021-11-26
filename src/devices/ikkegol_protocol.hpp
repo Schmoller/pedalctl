@@ -2,6 +2,7 @@
 
 #include "../configuration/base.hpp"
 #include "../configuration/keyboard.hpp"
+#include "../configuration/text.hpp"
 
 #define PACKED __attribute__ ((packed))
 
@@ -114,3 +115,4 @@ struct PACKED ConfigPacket {
 
 SharedConfiguration parseConfig(const ConfigPacket &packet);
 SharedConfiguration parseKeyboardConfig(const ConfigPacket &packet);
+SharedConfiguration parseTextConfig(const ConfigPacket &packet);

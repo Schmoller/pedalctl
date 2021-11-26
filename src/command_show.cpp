@@ -1,10 +1,12 @@
 #include "commands.hpp"
 #include "devices/ikkegol_pedal.hpp"
 #include "configuration/keyboard.hpp"
+#include "configuration/text.hpp"
 #include <iostream>
 
 void printConfig(SharedConfiguration config);
 void printKeyboardConfig(KeyboardConfiguration &config);
+void printTextConfig(TextConfiguration &config);
 
 void showCommand(args::Subparser &parser) {
     args::Positional<std::string> deviceId(parser, "device", "Device ID of the pedal", args::Options::Required);
@@ -57,7 +59,7 @@ void printConfig(SharedConfiguration config) {
             break;
         }
         case ConfigurationType::Text: {
-            std::cout << "  text Not implemented" << std::endl;
+            printTextConfig(static_cast<TextConfiguration &>(*config));
             break;
         }
         case ConfigurationType::Media: {
@@ -93,4 +95,8 @@ void printKeyboardConfig(KeyboardConfiguration &config) {
         std::cout << key;
     }
     std::cout << std::endl;
+}
+
+void printTextConfig(TextConfiguration &config) {
+    std::cout << " Text: " << config.text << std::endl;
 }
