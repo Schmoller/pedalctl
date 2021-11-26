@@ -6,18 +6,18 @@
 
 SharedConfiguration parseConfig(const ConfigPacket &packet) {
     SharedConfiguration configuration;
-    if (packet.packetType == PT_CONFIG) {
-        switch (packet.type) {
-            case CT_KEYBOARD_MULTI:
-            case CT_KEYBOARD_SINGLE:
-                return parseKeyboardConfig(packet);
-            case CT_MOUSE:
-                break;
-            case CT_MEDIA:
-                break;
-            case CT_GAME:
-                break;
-        }
+    switch (packet.type) {
+        case CT_KEYBOARD:
+        case CT_KEYBOARD_ONCE:
+        case CT_KEYBOARD_MULTI:
+        case CT_KEYBOARD_MULTI_ONCE:
+            return parseKeyboardConfig(packet);
+        case CT_MOUSE:
+            break;
+        case CT_MEDIA:
+            break;
+        case CT_GAME:
+            break;
     }
 
     return configuration;
@@ -25,10 +25,10 @@ SharedConfiguration parseConfig(const ConfigPacket &packet) {
 
 SharedConfiguration parseKeyboardConfig(const ConfigPacket &packet) {
     auto config = std::make_shared<KeyboardConfiguration>();
-    if (packet.type == CT_KEYBOARD_MULTI) {
-        config->mode = KeyMode::Standard;
-    } else {
+    if (packet.type == CT_KEYBOARD_ONCE || packet.type == CT_KEYBOARD_MULTI_ONCE) {
         config->mode = KeyMode::OneShot;
+    } else {
+        config->mode = KeyMode::Standard;
     }
 
     std::vector<std::string> keys;
@@ -57,7 +57,8 @@ SharedConfiguration parseKeyboardConfig(const ConfigPacket &packet) {
         keys.emplace_back(KeyName::RightSuper);
     }
 
-    for (char key: packet.keyboard.keys) {
+    for (auto index = 0; index < packet.size - offsetof(ConfigPacket, keyboard.keys); ++index) {
+        auto key = packet.keyboard.keys[index];
         if (key == 0) {
             break;
         }

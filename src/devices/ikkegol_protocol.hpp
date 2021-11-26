@@ -73,26 +73,24 @@ enum TriggerMode : unsigned char {
 };
 
 enum ConfigType : unsigned char {
-    CT_KEYBOARD_MULTI = 0x01,
-    CT_KEYBOARD_SINGLE = 0x81,
+    CT_KEYBOARD = 0x01,
+    CT_KEYBOARD_ONCE = 0x81,
     CT_MOUSE = 0x02,
+    CT_TEXT = 0x04,
+    CT_KEYBOARD_MULTI = 0x06,
+    CT_KEYBOARD_MULTI_ONCE = 0x86,
     CT_MEDIA = 0x07,
     CT_GAME = 0x08,
 };
 
-enum PacketType : unsigned char {
-    PT_CONFIG = 0x08,
-    PT_STRING_CONFIG = 0x10
-};
-
 struct PACKED ConfigPacket {
-    PacketType packetType;
+    uint8_t size;
     ConfigType type;
 
     union {
         struct PACKED {
             char modifiers;
-            char keys[5];
+            char keys[6];
         } keyboard;
         struct PACKED {
             char unknown[2];
@@ -103,12 +101,14 @@ struct PACKED ConfigPacket {
         } mouse;
         struct PACKED {
             MediaButton key;
-            char padding[5];
         } media;
         struct PACKED {
             GameKey key;
-            char padding[5];
         } game;
+        struct PACKED {
+            char string[38];
+        } string;
+        char padding[38];
     };
 };
 

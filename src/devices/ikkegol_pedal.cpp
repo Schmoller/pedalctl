@@ -5,6 +5,7 @@
 #include <cstring>
 #include <chrono>
 #include <thread>
+#include <cassert>
 
 const uint16_t VendorId = 0x1a86;
 const uint16_t ProductId = 0xe026;
@@ -203,11 +204,27 @@ SharedConfiguration IkkegolPedal::readConfiguration(uint32_t pedal) {
         return {};
     }
 
-    uint8_t buffer[8];
+    uint8_t buffer[40];
+    std::fill_n(buffer, sizeof(buffer), 0);
+
     int read;
-    result = libusb_interrupt_transfer(handle, ConfigEndpoint | LIBUSB_ENDPOINT_IN, buffer, sizeof(buffer), &read, 100);
+    result = libusb_interrupt_transfer(handle, ConfigEndpoint | LIBUSB_ENDPOINT_IN, buffer, 8, &read, 100);
     if (result < 0) {
         return {};
+    }
+
+    assert(buffer[0] <= 40);
+
+    if (buffer[0] > 8) {
+        auto pages = ((buffer[0] + 7) & ~7) >> 3;
+        for (auto page = 1; page < pages; ++page) {
+            result = libusb_interrupt_transfer(
+                handle, ConfigEndpoint | LIBUSB_ENDPOINT_IN, &buffer[page * 8], 8, &read, 100
+            );
+            if (result < 0) {
+                return {};
+            }
+        }
     }
 
     auto *packet = reinterpret_cast<ConfigPacket *>(buffer);
