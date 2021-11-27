@@ -3,12 +3,14 @@
 #include "configuration/keyboard.hpp"
 #include "configuration/text.hpp"
 #include "configuration/mouse.hpp"
+#include "configuration/gamepad.hpp"
 #include <iostream>
 
 void printConfig(SharedConfiguration config);
 void printKeyboardConfig(KeyboardConfiguration &config);
 void printTextConfig(TextConfiguration &config);
 void printMouseConfig(MouseConfiguration &config);
+void printGamepadConfig(GamepadConfiguration &config);
 
 void showCommand(args::Subparser &parser) {
     args::Positional<std::string> deviceId(parser, "device", "Device ID of the pedal", args::Options::Required);
@@ -68,8 +70,8 @@ void printConfig(SharedConfiguration config) {
             std::cout << "  media Not implemented" << std::endl;
             break;
         }
-        case ConfigurationType::Game: {
-            std::cout << "  game Not implemented" << std::endl;
+        case ConfigurationType::Gamepad: {
+            printGamepadConfig(static_cast<GamepadConfiguration &>(*config));
             break;
         }
         default: {
@@ -135,4 +137,47 @@ void printMouseConfig(MouseConfiguration &config) {
         std::cout << "  Mouse move: " << (int) config.relativeX << "," << (int) config.relativeY << std::endl;
         std::cout << "  Mouse wheel: " << (int) config.wheelDelta << std::endl;
     }
+}
+
+void printGamepadConfig(GamepadConfiguration &config) {
+    std::cout << "  Button: ";
+    switch (config.button) {
+        case GamepadButton::Left:
+            std::cout << "Left";
+            break;
+        case GamepadButton::Right:
+            std::cout << "Right";
+            break;
+        case GamepadButton::Up:
+            std::cout << "Up";
+            break;
+        case GamepadButton::Down:
+            std::cout << "Down";
+            break;
+        case GamepadButton::Button1:
+            std::cout << "Button 1";
+            break;
+        case GamepadButton::Button2:
+            std::cout << "Button 2";
+            break;
+        case GamepadButton::Button3:
+            std::cout << "Button 3";
+            break;
+        case GamepadButton::Button4:
+            std::cout << "Button 4";
+            break;
+        case GamepadButton::Button5:
+            std::cout << "Button 5";
+            break;
+        case GamepadButton::Button6:
+            std::cout << "Button 6";
+            break;
+        case GamepadButton::Button7:
+            std::cout << "Button 7";
+            break;
+        case GamepadButton::Button8:
+            std::cout << "Button 8";
+            break;
+    };
+    std::cout << std::endl;
 }

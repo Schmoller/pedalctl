@@ -2,6 +2,7 @@
 #include "../configuration/keys.hpp"
 #include "../utils/usb_scancodes.hpp"
 #include "../configuration/mouse.hpp"
+#include "../configuration/gamepad.hpp"
 
 #define MODIFIER(name) (packet.keyboard.modifiers & name) != 0
 #define MOUSE_BUTTON(name) (packet.mouse.buttons & name) != 0
@@ -21,7 +22,7 @@ SharedConfiguration parseConfig(const ConfigPacket &packet) {
         case CT_MEDIA:
             break;
         case CT_GAME:
-            break;
+            return parseGamepadConfig(packet);
     }
 
     return configuration;
@@ -130,6 +131,15 @@ SharedConfiguration parseMouseConfig(const ConfigPacket &packet) {
         config->relativeY = packet.mouse.mouseY;
         config->wheelDelta = packet.mouse.mouseWheel;
     }
+
+    return config;
+}
+
+SharedConfiguration parseGamepadConfig(const ConfigPacket &packet) {
+    auto config = std::make_shared<GamepadConfiguration>();
+
+    auto button = static_cast<GamepadButton>(packet.game.key - 1);
+    config->button = button;
 
     return config;
 }

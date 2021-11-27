@@ -7,7 +7,7 @@ enum class ConfigurationType {
     Mouse,
     Text,
     Media,
-    Game,
+    Gamepad,
 };
 
 enum class Trigger {
