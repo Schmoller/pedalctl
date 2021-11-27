@@ -23,6 +23,7 @@ std::vector<SharedIkkegolPedal> discoverIkkegolDevices() {
         return {};
     }
 
+    int nextId = 1;
     for (auto index = 0; index < deviceCount; ++index) {
         libusb_device *device = list[index];
         libusb_device_descriptor descriptor;
@@ -30,9 +31,10 @@ std::vector<SharedIkkegolPedal> discoverIkkegolDevices() {
             continue;
         }
         if (descriptor.idVendor == VendorId && descriptor.idProduct == ProductId) {
-            auto footPedal = std::make_shared<IkkegolPedal>(device);
+            auto footPedal = std::make_shared<IkkegolPedal>(device, nextId);
             if (footPedal->isValid()) {
                 devices.push_back(footPedal);
+                ++nextId;
             }
         }
     }
@@ -42,7 +44,7 @@ std::vector<SharedIkkegolPedal> discoverIkkegolDevices() {
     return devices;
 }
 
-SharedIkkegolPedal findIkkegolDevice(const std::string_view &id) {
+SharedIkkegolPedal findIkkegolDevice(uint32_t id) {
     libusb_device **list;
     SharedIkkegolPedal found;
 
@@ -52,6 +54,7 @@ SharedIkkegolPedal findIkkegolDevice(const std::string_view &id) {
         return {};
     }
 
+    int nextId = 1;
     for (auto index = 0; index < deviceCount; ++index) {
         libusb_device *device = list[index];
         libusb_device_descriptor descriptor;
@@ -59,10 +62,13 @@ SharedIkkegolPedal findIkkegolDevice(const std::string_view &id) {
             continue;
         }
         if (descriptor.idVendor == VendorId && descriptor.idProduct == ProductId) {
-            auto footPedal = std::make_shared<IkkegolPedal>(device);
-            if (footPedal->isValid() && footPedal->getId() == id) {
-                found = footPedal;
-                break;
+            auto footPedal = std::make_shared<IkkegolPedal>(device, nextId);
+            if (footPedal->isValid()) {
+                if (footPedal->getId() == id) {
+                    found = footPedal;
+                    break;
+                }
+                ++nextId;
             }
         }
     }
@@ -72,14 +78,8 @@ SharedIkkegolPedal findIkkegolDevice(const std::string_view &id) {
     return found;
 }
 
-IkkegolPedal::IkkegolPedal(libusb_device *device) {
+IkkegolPedal::IkkegolPedal(libusb_device *device, int id) : id(id) {
     libusb_open(device, &handle);
-
-    auto busId = libusb_get_bus_number(device);
-    auto deviceAddress = libusb_get_device_address(device);
-    char buffer[20];
-    std::sprintf(buffer, "%d:%d", busId, deviceAddress);
-    id = std::string(buffer);
 
     if (handle != nullptr) {
         init();

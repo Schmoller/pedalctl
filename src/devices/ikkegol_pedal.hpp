@@ -10,7 +10,7 @@
 
 class IkkegolPedal {
 public:
-    explicit IkkegolPedal(libusb_device *);
+    explicit IkkegolPedal(libusb_device *, int id);
     ~IkkegolPedal();
 
     bool isValid() const { return handle != nullptr; }
@@ -19,7 +19,7 @@ public:
 
     const std::string &getVersion() const { return version; }
 
-    const std::string &getId() const { return id; }
+    int getId() const { return id; }
 
     bool load();
 
@@ -30,7 +30,7 @@ private:
     libusb_device_handle *handle {};
     std::string model;
     std::string version;
-    std::string id;
+    int id;
     Capabilities capabilities;
     std::vector<SharedConfiguration> pedalConfiguration;
 
@@ -43,5 +43,5 @@ private:
 typedef std::shared_ptr<IkkegolPedal> SharedIkkegolPedal;
 
 std::vector<SharedIkkegolPedal> discoverIkkegolDevices();
-SharedIkkegolPedal findIkkegolDevice(const std::string_view &id);
+SharedIkkegolPedal findIkkegolDevice(uint32_t id);
 

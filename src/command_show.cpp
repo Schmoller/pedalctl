@@ -15,7 +15,7 @@ void printGamepadConfig(GamepadConfiguration &config);
 void printMediaConfig(MediaConfiguration &config);
 
 void showCommand(args::Subparser &parser) {
-    args::Positional<std::string> deviceId(parser, "device", "Device ID of the pedal", args::Options::Required);
+    args::Positional<uint32_t> deviceId(parser, "device", "Device ID of the pedal", args::Options::Required);
 
     parser.Parse();
 
