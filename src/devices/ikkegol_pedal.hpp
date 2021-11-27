@@ -36,7 +36,7 @@ private:
 
     void init();
     bool readModelAndVersion();
-    bool readPedals();
+    bool readPedalTriggerModes();
     SharedConfiguration readConfiguration(uint32_t pedal);
 };
 

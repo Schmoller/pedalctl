@@ -6,12 +6,6 @@
 
 #define PACKED __attribute__ ((packed))
 
-enum Pedal {
-    PE_LEFT = 1,
-    PE_MIDDLE = 2,
-    PE_RIGHT = 3,
-};
-
 enum ModifierKeys : unsigned char {
     MK_LEFT_CONTROL = 0x01,
     MK_LEFT_SHIFT = 0x02,

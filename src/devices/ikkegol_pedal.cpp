@@ -166,13 +166,14 @@ bool IkkegolPedal::load() {
     }
     USBInterfaceLock interfaceLock(handle, ConfigInterface);
 
-    if (!readPedals()) {
-        return false;
-    }
-
     for (auto pedal = 0; pedal < capabilities.pedals; ++pedal) {
         pedalConfiguration[pedal] = readConfiguration(pedal);
     }
+
+    if (!readPedalTriggerModes()) {
+        return false;
+    }
+
     return true;
 }
 
@@ -183,7 +184,7 @@ SharedConfiguration IkkegolPedal::getConfiguration(uint32_t pedal) const {
     return {};
 }
 
-bool IkkegolPedal::readPedals() {
+bool IkkegolPedal::readPedalTriggerModes() {
     uint8_t request[8] = { 0x01, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
     int wrote;
@@ -194,14 +195,33 @@ bool IkkegolPedal::readPedals() {
         return false;
     }
 
-    uint8_t buffer[8];
+    uint8_t buffer[16];
     int read;
-    result = libusb_interrupt_transfer(handle, ConfigEndpoint | LIBUSB_ENDPOINT_IN, buffer, sizeof(buffer), &read, 100);
+    result = libusb_interrupt_transfer(handle, ConfigEndpoint | LIBUSB_ENDPOINT_IN, buffer, 8, &read, 100);
     if (result < 0) {
         return false;
     }
 
-    // TODO: Use this to load in the pedal trigger modes
+    if (buffer[0] > 8) {
+        result = libusb_interrupt_transfer(handle, ConfigEndpoint | LIBUSB_ENDPOINT_IN, &buffer[8], 8, &read, 100);
+        if (result < 0) {
+            return false;
+        }
+    }
+
+    for (auto pedal = 0; pedal < capabilities.pedals; ++pedal) {
+        auto mode = static_cast<TriggerMode>(buffer[pedal + 1]);
+        auto &config = pedalConfiguration[pedal];
+
+        switch (mode) {
+            case TM_RELEASE:
+                config->trigger = Trigger::OnRelease;
+                break;
+            case TM_PRESS:
+                config->trigger = Trigger::OnPress;
+                break;
+        };
+    }
 
     return true;
 }
