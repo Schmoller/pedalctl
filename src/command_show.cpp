@@ -2,11 +2,13 @@
 #include "devices/ikkegol_pedal.hpp"
 #include "configuration/keyboard.hpp"
 #include "configuration/text.hpp"
+#include "configuration/mouse.hpp"
 #include <iostream>
 
 void printConfig(SharedConfiguration config);
 void printKeyboardConfig(KeyboardConfiguration &config);
 void printTextConfig(TextConfiguration &config);
+void printMouseConfig(MouseConfiguration &config);
 
 void showCommand(args::Subparser &parser) {
     args::Positional<std::string> deviceId(parser, "device", "Device ID of the pedal", args::Options::Required);
@@ -55,7 +57,7 @@ void printConfig(SharedConfiguration config) {
             break;
         }
         case ConfigurationType::Mouse: {
-            std::cout << "  mouse Not implemented" << std::endl;
+            printMouseConfig(static_cast<MouseConfiguration &>(*config));
             break;
         }
         case ConfigurationType::Text: {
@@ -99,4 +101,38 @@ void printKeyboardConfig(KeyboardConfiguration &config) {
 
 void printTextConfig(TextConfiguration &config) {
     std::cout << " Text: " << config.text << std::endl;
+}
+
+void printMouseConfig(MouseConfiguration &config) {
+    if (config.mode == MouseMode::Buttons) {
+        std::cout << "  Buttons: ";
+        bool first = true;
+        for (auto button: config.buttons) {
+            if (!first) {
+                std::cout << " + ";
+            }
+            first = false;
+            switch (button) {
+                case MouseButton::Left:
+                    std::cout << "left";
+                    break;
+                case MouseButton::Right:
+                    std::cout << "right";
+                    break;
+                case MouseButton::Middle:
+                    std::cout << "middle";
+                    break;
+                case MouseButton::Back:
+                    std::cout << "back";
+                    break;
+                case MouseButton::Forward:
+                    std::cout << "forward";
+                    break;
+            };
+        }
+        std::cout << std::endl;
+    } else {
+        std::cout << "  Mouse move: " << (int) config.relativeX << "," << (int) config.relativeY << std::endl;
+        std::cout << "  Mouse wheel: " << (int) config.wheelDelta << std::endl;
+    }
 }

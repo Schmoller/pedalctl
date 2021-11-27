@@ -1,8 +1,10 @@
 #include "ikkegol_protocol.hpp"
 #include "../configuration/keys.hpp"
 #include "../utils/usb_scancodes.hpp"
+#include "../configuration/mouse.hpp"
 
 #define MODIFIER(name) (packet.keyboard.modifiers & name) != 0
+#define MOUSE_BUTTON(name) (packet.mouse.buttons & name) != 0
 
 SharedConfiguration parseConfig(const ConfigPacket &packet) {
     SharedConfiguration configuration;
@@ -15,7 +17,7 @@ SharedConfiguration parseConfig(const ConfigPacket &packet) {
         case CT_TEXT:
             return parseTextConfig(packet);
         case CT_MOUSE:
-            break;
+            return parseMouseConfig(packet);
         case CT_MEDIA:
             break;
         case CT_GAME:
@@ -96,5 +98,38 @@ SharedConfiguration parseTextConfig(const ConfigPacket &packet) {
     }
 
     config->text = text;
+    return config;
+}
+
+SharedConfiguration parseMouseConfig(const ConfigPacket &packet) {
+    auto config = std::make_shared<MouseConfiguration>();
+
+    std::unordered_set<MouseButton> buttons;
+    if (MOUSE_BUTTON(MB_LEFT)) {
+        buttons.insert(MouseButton::Left);
+    }
+    if (MOUSE_BUTTON(MB_RIGHT)) {
+        buttons.insert(MouseButton::Right);
+    }
+    if (MOUSE_BUTTON(MB_MIDDLE)) {
+        buttons.insert(MouseButton::Middle);
+    }
+    if (MOUSE_BUTTON(MB_BACK)) {
+        buttons.insert(MouseButton::Back);
+    }
+    if (MOUSE_BUTTON(MB_FORWARD)) {
+        buttons.insert(MouseButton::Forward);
+    }
+
+    if (!buttons.empty()) {
+        config->mode = MouseMode::Buttons;
+        config->buttons = buttons;
+    } else {
+        config->mode = MouseMode::Axis;
+        config->relativeX = packet.mouse.mouseX;
+        config->relativeY = packet.mouse.mouseY;
+        config->wheelDelta = packet.mouse.mouseWheel;
+    }
+
     return config;
 }

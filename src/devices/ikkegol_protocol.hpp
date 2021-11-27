@@ -23,7 +23,7 @@ enum ModifierKeys : unsigned char {
     MK_RIGHT_SUPER = 0x80,
 };
 
-enum MouseButton : unsigned char {
+enum ProtocolMouseButton : unsigned char {
     MB_LEFT = 0x01,
     MB_RIGHT = 0x02,
     MB_MIDDLE = 0x04,
@@ -116,3 +116,4 @@ struct PACKED ConfigPacket {
 SharedConfiguration parseConfig(const ConfigPacket &packet);
 SharedConfiguration parseKeyboardConfig(const ConfigPacket &packet);
 SharedConfiguration parseTextConfig(const ConfigPacket &packet);
+SharedConfiguration parseMouseConfig(const ConfigPacket &packet);
