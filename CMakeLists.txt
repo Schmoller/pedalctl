@@ -16,6 +16,7 @@ add_executable(pedalctl
         src/devices/ikkegol_pedal.cpp
         src/utils/usb_interface_lock.cpp
         src/devices/ikkegol_protocol.cpp
+        src/devices/ikkegol_capabilities.cpp
         )
 
 target_link_libraries(pedalctl ${LIBUSB_1_LIBRARIES})

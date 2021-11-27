@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../configuration/base.hpp"
+#include "ikkegol_capabilities.hpp"
 #include <vector>
 #include <string>
 #include <memory>
@@ -16,23 +17,25 @@ public:
 
     const std::string &getModel() const { return model; }
 
+    const std::string &getVersion() const { return version; }
+
     const std::string &getId() const { return id; }
 
     bool load();
 
-    uint32_t getPedalCount() const { return pedalCount; }
+    uint32_t getPedalCount() const { return capabilities.pedals; }
 
     SharedConfiguration getConfiguration(uint32_t pedal) const;
 private:
     libusb_device_handle *handle {};
     std::string model;
+    std::string version;
     std::string id;
-
-    uint32_t pedalCount { 0 };
+    Capabilities capabilities;
     std::vector<SharedConfiguration> pedalConfiguration;
 
     void init();
-    bool readModel();
+    bool readModelAndVersion();
     bool readPedals();
     SharedConfiguration readConfiguration(uint32_t pedal);
 };

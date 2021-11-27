@@ -15,6 +15,7 @@ void listCommand(args::Subparser &parser) {
     std::cout << std::endl;
 
     for (auto &device: devices) {
-        std::cout << " " << device->getId() << ": " << device->getModel() << std::endl;
+        std::cout << " " << device->getId() << ": " << device->getModel() << " Version " << device->getVersion()
+            << std::endl;
     }
 }

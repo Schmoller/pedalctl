@@ -94,10 +94,17 @@ IkkegolPedal::~IkkegolPedal() {
 
 void IkkegolPedal::init() {
     libusb_set_auto_detach_kernel_driver(handle, 1);
-    readModel();
+    readModelAndVersion();
+    auto caps = getModelCapabilities(model);
+    if (caps) {
+        capabilities = *caps;
+    }
+
+    pedalConfiguration.clear();
+    pedalConfiguration.resize(capabilities.pedals);
 }
 
-bool IkkegolPedal::readModel() {
+bool IkkegolPedal::readModelAndVersion() {
     constexpr uint32_t MaxAttempts = 10;
     constexpr uint32_t MaxSections = 4;
 
@@ -138,7 +145,18 @@ bool IkkegolPedal::readModel() {
     }
 
     std::string decoded(reinterpret_cast<char *>(versionBuffer), sectionsRead * 8);
-    model = decoded;
+    auto separator = decoded.find_last_of('_');
+    if (separator == std::string::npos) {
+        // Unexpected format
+        return false;
+    }
+    model = decoded.substr(0, separator);
+
+    if (decoded[separator + 1] == 'V') {
+        ++separator;
+    }
+
+    version = decoded.substr(separator + 1);
     return true;
 }
 
@@ -152,7 +170,7 @@ bool IkkegolPedal::load() {
         return false;
     }
 
-    for (auto pedal = 0; pedal < pedalCount; ++pedal) {
+    for (auto pedal = 0; pedal < capabilities.pedals; ++pedal) {
         pedalConfiguration[pedal] = readConfiguration(pedal);
     }
     return true;
@@ -183,12 +201,7 @@ bool IkkegolPedal::readPedals() {
         return false;
     }
 
-    // TODO: This is an assumption. It appears to hold so far
-    auto countPlusOne = buffer[0];
-
-    pedalCount = countPlusOne - 1;
-    pedalConfiguration.clear();
-    pedalConfiguration.resize(pedalCount);
+    // TODO: Use this to load in the pedal trigger modes
 
     return true;
 }
