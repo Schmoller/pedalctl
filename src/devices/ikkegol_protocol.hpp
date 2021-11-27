@@ -112,3 +112,4 @@ SharedConfiguration parseKeyboardConfig(const ConfigPacket &packet);
 SharedConfiguration parseTextConfig(const ConfigPacket &packet);
 SharedConfiguration parseMouseConfig(const ConfigPacket &packet);
 SharedConfiguration parseGamepadConfig(const ConfigPacket &packet);
+SharedConfiguration parseMediaConfig(const ConfigPacket &packet);

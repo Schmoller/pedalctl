@@ -4,6 +4,7 @@
 #include "configuration/text.hpp"
 #include "configuration/mouse.hpp"
 #include "configuration/gamepad.hpp"
+#include "configuration/media.hpp"
 #include <iostream>
 
 void printConfig(SharedConfiguration config);
@@ -11,6 +12,7 @@ void printKeyboardConfig(KeyboardConfiguration &config);
 void printTextConfig(TextConfiguration &config);
 void printMouseConfig(MouseConfiguration &config);
 void printGamepadConfig(GamepadConfiguration &config);
+void printMediaConfig(MediaConfiguration &config);
 
 void showCommand(args::Subparser &parser) {
     args::Positional<std::string> deviceId(parser, "device", "Device ID of the pedal", args::Options::Required);
@@ -67,7 +69,7 @@ void printConfig(SharedConfiguration config) {
             break;
         }
         case ConfigurationType::Media: {
-            std::cout << "  media Not implemented" << std::endl;
+            printMediaConfig(static_cast<MediaConfiguration &>(*config));
             break;
         }
         case ConfigurationType::Gamepad: {
@@ -177,6 +179,70 @@ void printGamepadConfig(GamepadConfiguration &config) {
             break;
         case GamepadButton::Button8:
             std::cout << "Button 8";
+            break;
+    };
+    std::cout << std::endl;
+}
+
+void printMediaConfig(MediaConfiguration &config) {
+    std::cout << "  Button: ";
+    switch (config.button) {
+        case MultiMediaButton::DecreaseVolume:
+            std::cout << "decrease_volume";
+            break;
+        case MultiMediaButton::IncreaseVolume:
+            std::cout << "increase_volume";
+            break;
+        case MultiMediaButton::Mute:
+            std::cout << "mute";
+            break;
+        case MultiMediaButton::Play:
+            std::cout << "play";
+            break;
+        case MultiMediaButton::Forward:
+            std::cout << "forward";
+            break;
+        case MultiMediaButton::Next:
+            std::cout << "next";
+            break;
+        case MultiMediaButton::Stop:
+            std::cout << "stop";
+            break;
+        case MultiMediaButton::OpenPlayer:
+            std::cout << "open_player";
+            break;
+        case MultiMediaButton::OpenHomepage:
+            std::cout << "open_homepage";
+            break;
+        case MultiMediaButton::StopWebPage:
+            std::cout << "stop_web_page";
+            break;
+        case MultiMediaButton::NavigateBack:
+            std::cout << "navigate_back";
+            break;
+        case MultiMediaButton::NavigateForward:
+            std::cout << "navigate_forward";
+            break;
+        case MultiMediaButton::Refresh:
+            std::cout << "refresh";
+            break;
+        case MultiMediaButton::OpenMyComputer:
+            std::cout << "open_my_computer";
+            break;
+        case MultiMediaButton::OpenMail:
+            std::cout << "open_mail";
+            break;
+        case MultiMediaButton::OpenCalc:
+            std::cout << "open_calculator";
+            break;
+        case MultiMediaButton::OpenSearch:
+            std::cout << "open_search";
+            break;
+        case MultiMediaButton::Shutdown:
+            std::cout << "shutdown";
+            break;
+        case MultiMediaButton::Sleep:
+            std::cout << "sleep";
             break;
     };
     std::cout << std::endl;
