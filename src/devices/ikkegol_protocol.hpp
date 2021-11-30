@@ -1,8 +1,6 @@
 #pragma once
 
 #include "../configuration/base.hpp"
-#include "../configuration/keyboard.hpp"
-#include "../configuration/text.hpp"
 
 #define PACKED __attribute__ ((packed))
 
@@ -84,8 +82,8 @@ struct PACKED ConfigPacket {
 
     union {
         struct PACKED {
-            char modifiers;
-            char keys[6];
+            uint8_t modifiers;
+            uint8_t keys[6];
         } keyboard;
         struct PACKED {
             char unknown[2];
@@ -108,8 +106,4 @@ struct PACKED ConfigPacket {
 };
 
 SharedConfiguration parseConfig(const ConfigPacket &packet);
-SharedConfiguration parseKeyboardConfig(const ConfigPacket &packet);
-SharedConfiguration parseTextConfig(const ConfigPacket &packet);
-SharedConfiguration parseMouseConfig(const ConfigPacket &packet);
-SharedConfiguration parseGamepadConfig(const ConfigPacket &packet);
-SharedConfiguration parseMediaConfig(const ConfigPacket &packet);
+ConfigPacket encodeConfigPacket(const SharedConfiguration &config);

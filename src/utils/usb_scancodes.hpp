@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../configuration/keys.hpp"
+#include <string>
 
 constexpr const char *ScanCodeNames[] = {
     nullptr,
@@ -104,7 +105,19 @@ constexpr const char *ScanCodeNames[] = {
     "num0",
     "num.",
     nullptr,
-    "num="
+    "num=",
+    "f13",
+    "f14",
+    "f15",
+    "f16",
+    "f17",
+    "f18",
+    "f19",
+    "f20",
+    "f21",
+    "f22",
+    "f23",
+    "f24",
 };
 
 constexpr const char *PrintableScanCodes[] = {
@@ -227,3 +240,5 @@ constexpr char scanCodeToPrintable(int scanCode, bool shift) {
 
     return PrintableScanCodes[scanCode][shift ? 1 : 0];
 }
+
+int scanCodeFromKey(const std::string_view &name);

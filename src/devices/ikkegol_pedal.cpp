@@ -102,6 +102,10 @@ void IkkegolPedal::init() {
 
     pedalConfiguration.clear();
     pedalConfiguration.resize(capabilities.pedals);
+
+    pedalModified.clear();
+    pedalModified.resize(capabilities.pedals);
+    std::fill(pedalModified.begin(), pedalModified.end(), false);
 }
 
 bool IkkegolPedal::readModelAndVersion() {
@@ -170,6 +174,8 @@ bool IkkegolPedal::load() {
         pedalConfiguration[pedal] = readConfiguration(pedal);
     }
 
+    std::fill(pedalModified.begin(), pedalModified.end(), false);
+
     if (!readPedalTriggerModes()) {
         return false;
     }
@@ -177,11 +183,17 @@ bool IkkegolPedal::load() {
     return true;
 }
 
-SharedConfiguration IkkegolPedal::getConfiguration(uint32_t pedal) const {
+const SharedConfiguration IkkegolPedal::getConfiguration(uint32_t pedal) const {
     if (pedal < pedalConfiguration.size()) {
         return pedalConfiguration[pedal];
     }
     return {};
+}
+
+void IkkegolPedal::setConfiguration(uint32_t pedal, const SharedConfiguration &config) {
+    assert(pedal < pedalConfiguration.size());
+    pedalConfiguration[pedal] = config;
+    pedalModified[pedal] = true;
 }
 
 bool IkkegolPedal::readPedalTriggerModes() {
@@ -262,4 +274,76 @@ SharedConfiguration IkkegolPedal::readConfiguration(uint32_t pedal) {
 
     auto *packet = reinterpret_cast<ConfigPacket *>(buffer);
     return parseConfig(*packet);
+}
+
+bool IkkegolPedal::save() {
+    bool anyModified = false;
+    for (auto modified: pedalModified) {
+        anyModified = anyModified || modified;
+    }
+
+    if (!anyModified) {
+        return true;
+    }
+
+    USBInterfaceLock interfaceLock(handle, ConfigInterface);
+
+    if (!beginWrite()) {
+        return false;
+    }
+
+    for (auto pedal = 0; pedal < capabilities.pedals; ++pedal) {
+        if (!pedalModified[pedal]) {
+            continue;
+        }
+        if (!writeConfiguration(pedal, pedalConfiguration[pedal])) {
+            return false;
+        }
+    }
+
+    // TODO: Update trigger type
+    std::fill(pedalModified.begin(), pedalModified.end(), false);
+    readPedalTriggerModes();
+    return true;
+}
+
+bool IkkegolPedal::beginWrite() {
+    uint8_t request[8] = { 0x01, 0x80, 0x08, 0x01, 0x00, 0x00, 0x00, 0x00 };
+
+    int wrote;
+    auto result = libusb_interrupt_transfer(
+        handle, ConfigEndpoint | LIBUSB_ENDPOINT_OUT, request, sizeof(request), &wrote, 100
+    );
+    if (wrote < 0 || result < 0) {
+        return false;
+    }
+
+    return true;
+}
+
+bool IkkegolPedal::writeConfiguration(uint32_t pedal, const SharedConfiguration &config) {
+    uint8_t requestInitiate[8] = { 0x01, 0x81, 0x08, static_cast<uint8_t>(pedal + 1), 0x00, 0x00, 0x00, 0x00 };
+
+    int wrote;
+    auto result = libusb_interrupt_transfer(
+        handle, ConfigEndpoint | LIBUSB_ENDPOINT_OUT, requestInitiate, sizeof(requestInitiate), &wrote, 100
+    );
+    if (wrote < 0 || result < 0) {
+        return false;
+    }
+
+    auto packet = encodeConfigPacket(config);
+    auto *requestBody = reinterpret_cast<uint8_t *>(&packet);
+
+    auto pages = ((packet.size + 7) & ~7) >> 3;
+    for (auto page = 0; page < pages; ++page) {
+        result = libusb_interrupt_transfer(
+            handle, ConfigEndpoint | LIBUSB_ENDPOINT_OUT, &requestBody[page * 8], 8, &wrote, 100
+        );
+        if (wrote < 0 || result < 0) {
+            return false;
+        }
+    }
+
+    return true;
 }

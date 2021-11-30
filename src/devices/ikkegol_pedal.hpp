@@ -22,10 +22,12 @@ public:
     int getId() const { return id; }
 
     bool load();
+    bool save();
 
     uint32_t getPedalCount() const { return capabilities.pedals; }
 
-    SharedConfiguration getConfiguration(uint32_t pedal) const;
+    const SharedConfiguration getConfiguration(uint32_t pedal) const;
+    void setConfiguration(uint32_t pedal, const SharedConfiguration &config);
 private:
     libusb_device_handle *handle {};
     std::string model;
@@ -33,11 +35,14 @@ private:
     int id;
     Capabilities capabilities;
     std::vector<SharedConfiguration> pedalConfiguration;
+    std::vector<bool> pedalModified;
 
     void init();
     bool readModelAndVersion();
     bool readPedalTriggerModes();
+    bool beginWrite();
     SharedConfiguration readConfiguration(uint32_t pedal);
+    bool writeConfiguration(uint32_t pedal, const SharedConfiguration &config);
 };
 
 typedef std::shared_ptr<IkkegolPedal> SharedIkkegolPedal;

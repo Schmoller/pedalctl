@@ -6,6 +6,7 @@
 const char *ProgramDescription = "A command line application for configuring foot pedal input devices";
 const char *ListDescription = "Lists all available devices";
 const char *ShowDescription = "Shows the current configuration of a device";
+const char *SetDescription = "Sets the current configuration of a device";
 
 int main(int argc, char **argv) {
     args::ArgumentParser parser(ProgramDescription);
@@ -15,6 +16,7 @@ int main(int argc, char **argv) {
     args::Group commands(parser, "commands");
     args::Command list(commands, "list", ListDescription, &listCommand);
     args::Command show(commands, "show", ShowDescription, &showCommand);
+    args::Command set(commands, "set", SetDescription, &setCommand);
 
     auto result = libusb_init(nullptr);
     if (result < 0) {

@@ -1,12 +1,21 @@
+#include <cassert>
 #include "ikkegol_protocol.hpp"
 #include "../configuration/keys.hpp"
 #include "../utils/usb_scancodes.hpp"
 #include "../configuration/mouse.hpp"
 #include "../configuration/gamepad.hpp"
 #include "../configuration/media.hpp"
+#include "../configuration/text.hpp"
+#include "../configuration/keyboard.hpp"
 
 #define MODIFIER(name) (packet.keyboard.modifiers & name) != 0
 #define MOUSE_BUTTON(name) (packet.mouse.buttons & name) != 0
+
+SharedConfiguration parseKeyboardConfig(const ConfigPacket &packet);
+SharedConfiguration parseTextConfig(const ConfigPacket &packet);
+SharedConfiguration parseMouseConfig(const ConfigPacket &packet);
+SharedConfiguration parseGamepadConfig(const ConfigPacket &packet);
+SharedConfiguration parseMediaConfig(const ConfigPacket &packet);
 
 SharedConfiguration parseConfig(const ConfigPacket &packet) {
     SharedConfiguration configuration;
@@ -152,4 +161,115 @@ SharedConfiguration parseMediaConfig(const ConfigPacket &packet) {
     config->button = button;
 
     return config;
+}
+
+ConfigPacket encodeKeyboardPacket(const KeyboardConfiguration &config);
+ConfigPacket encodeMousePacket(const MouseConfiguration &config);
+ConfigPacket encodeTextPacket(const TextConfiguration &config);
+ConfigPacket encodeMediaPacket(const MediaConfiguration &config);
+ConfigPacket encodeGamepadPacket(const GamepadConfiguration &config);
+
+ConfigPacket encodeConfigPacket(const SharedConfiguration &config) {
+    switch (config->type()) {
+        case ConfigurationType::Keyboard:
+            return encodeKeyboardPacket(static_cast<KeyboardConfiguration &>(*config));
+        case ConfigurationType::Mouse:
+            return encodeMousePacket(static_cast<MouseConfiguration &>(*config));
+        case ConfigurationType::Text:
+            return encodeTextPacket(static_cast<TextConfiguration &>(*config));
+        case ConfigurationType::Media:
+            return encodeMediaPacket(static_cast<MediaConfiguration &>(*config));
+        case ConfigurationType::Gamepad:
+            return encodeGamepadPacket(static_cast<GamepadConfiguration &>(*config));
+    }
+}
+
+ConfigPacket encodeKeyboardPacket(const KeyboardConfiguration &config) {
+    ConfigPacket packet {};
+    assert(!config.keys.empty());
+
+    packet.keyboard.modifiers = 0;
+    std::fill_n(packet.keyboard.keys, sizeof(packet.keyboard.keys), 0);
+    auto index = 0;
+
+    for (auto &key: config.keys) {
+        if (key == KeyName::LeftControl) {
+            packet.keyboard.modifiers |= MK_LEFT_CONTROL;
+        } else if (key == KeyName::LeftShift) {
+            packet.keyboard.modifiers |= MK_LEFT_SHIFT;
+        } else if (key == KeyName::LeftAlt) {
+            packet.keyboard.modifiers |= MK_LEFT_ALT;
+        } else if (key == KeyName::LeftSuper) {
+            packet.keyboard.modifiers |= MK_LEFT_SUPER;
+        } else if (key == KeyName::RightControl) {
+            packet.keyboard.modifiers |= MK_RIGHT_CONTROL;
+        } else if (key == KeyName::RightShift) {
+            packet.keyboard.modifiers |= MK_RIGHT_SHIFT;
+        } else if (key == KeyName::RightAlt) {
+            packet.keyboard.modifiers |= MK_RIGHT_ALT;
+        } else if (key == KeyName::RightSuper) {
+            packet.keyboard.modifiers |= MK_RIGHT_SUPER;
+        } else {
+            auto scanCode = scanCodeFromKey(key);
+            assert(scanCode >= 0);
+            assert(index < 6);
+            packet.keyboard.keys[index++] = static_cast<int8_t>(scanCode);
+        }
+    }
+
+    if (config.mode == KeyMode::Standard) {
+        if (index > 1) {
+            packet.type = CT_KEYBOARD_MULTI;
+        } else {
+            packet.type = CT_KEYBOARD;
+        }
+    } else {
+        if (index > 1) {
+            packet.type = CT_KEYBOARD_MULTI_ONCE;
+        } else {
+            packet.type = CT_KEYBOARD_ONCE;
+        }
+    }
+    // NOTE: What happens if its just "lcontrol" or something like that?
+
+    if (index == 1) {
+        // This is an interesting quirk of these devices.
+        packet.size = 8;
+    } else {
+        packet.size = 3 + index;
+    }
+
+    return packet;
+}
+
+ConfigPacket encodeMousePacket(const MouseConfiguration &config) {
+    ConfigPacket packet {
+        .type = CT_MOUSE,
+    };
+    // TODO: not implemented
+    return packet;
+}
+
+ConfigPacket encodeTextPacket(const TextConfiguration &config) {
+    ConfigPacket packet {
+        .type = CT_TEXT,
+    };
+    // TODO: not implemented
+    return packet;
+}
+
+ConfigPacket encodeMediaPacket(const MediaConfiguration &config) {
+    ConfigPacket packet {
+        .type = CT_MEDIA,
+    };
+    // TODO: not implemented
+    return packet;
+}
+
+ConfigPacket encodeGamepadPacket(const GamepadConfiguration &config) {
+    ConfigPacket packet {
+        .type = CT_GAME,
+    };
+    // TODO: not implemented
+    return packet;
 }

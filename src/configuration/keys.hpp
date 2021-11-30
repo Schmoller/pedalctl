@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #define KEY(name, id) constexpr const char* name = #id
 
 namespace KeyName {
@@ -31,5 +33,8 @@ KEY(PageUp, page_up);
 KEY(PageDown, page_down);
 KEY(PrintScreen, print_screen);
 }
+
+bool isValidKey(const std::string_view &name);
+bool isModifierKey(const std::string_view &name);
 
 #undef KEY
