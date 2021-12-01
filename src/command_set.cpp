@@ -82,8 +82,47 @@ void setCommand(args::Subparser &parser) {
         exit(1);
     }
 
-    // TODO: Parse the pedal number
-    device->setConfiguration(0, config);
+    auto rawPedal = pedal.Get();
+    uint32_t pedalIndex;
+
+    try {
+        pedalIndex = stoi(rawPedal);
+        if (pedalIndex < 1 || pedalIndex > device->getPedalCount()) {
+            std::cerr << "Invalid pedal index. Expected an index between 1 and " << device->getPedalCount()
+                << std::endl;
+            exit(1);
+        }
+        --pedalIndex;
+    } catch (std::invalid_argument &error) {
+        auto found = false;
+        for (pedalIndex = 0; pedalIndex < device->getPedalCount(); ++pedalIndex) {
+            auto name = device->getPedalName(pedalIndex);
+            if (!name.empty() && name == rawPedal) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            std::cerr << "Invalid pedal name or index '" << rawPedal << "'" << std::endl;
+            std::cerr << "Possible values:" << std::endl;
+            std::cerr << " ";
+            for (pedalIndex = 0; pedalIndex < device->getPedalCount(); ++pedalIndex) {
+                if (pedalIndex != 0) {
+                    std::cerr << ", ";
+                }
+
+                auto name = device->getPedalName(pedalIndex);
+                std::cerr << (pedalIndex + 1);
+                if (!name.empty()) {
+                    std::cerr << ", " << name;
+                }
+            }
+            std::cerr << std::endl;
+            exit(1);
+        }
+    }
+
+    device->setConfiguration(pedalIndex, config);
 
     if (!device->save()) {
         std::cerr << "Unable to write configuration" << std::endl;

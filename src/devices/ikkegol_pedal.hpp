@@ -21,6 +21,8 @@ public:
 
     int getId() const { return id; }
 
+    std::string_view getPedalName(uint32_t pedal) const;
+
     bool load();
     bool save();
 

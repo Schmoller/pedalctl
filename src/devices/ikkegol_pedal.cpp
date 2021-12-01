@@ -347,3 +347,13 @@ bool IkkegolPedal::writeConfiguration(uint32_t pedal, const SharedConfiguration 
 
     return true;
 }
+
+std::string_view IkkegolPedal::getPedalName(uint32_t pedal) const {
+    assert(pedal < capabilities.pedals);
+
+    if (capabilities.pedalNames == nullptr) {
+        return {};
+    }
+
+    return capabilities.pedalNames[pedal];
+}
