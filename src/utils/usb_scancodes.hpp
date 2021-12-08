@@ -2,6 +2,7 @@
 
 #include "../configuration/keys.hpp"
 #include <string>
+#include <array>
 
 constexpr const char *ScanCodeNames[] = {
     nullptr,
@@ -225,6 +226,33 @@ constexpr const char *PrintableScanCodes[] = {
     "=="
 };
 
+constexpr auto generatePrintableReverseLut() {
+    constexpr auto size = sizeof(PrintableScanCodes) / sizeof(const char *);
+    constexpr uint8_t Shift = 0x80;
+
+    std::array<int, 128> table { -1 };
+    for (int ch = 0; ch < 128; ++ch) {
+        for (auto scanCode = 0; scanCode < size; ++scanCode) {
+            auto options = PrintableScanCodes[scanCode];
+            if (options == nullptr) {
+                continue;
+            }
+
+            if (options[0] == ch) {
+                table[ch] = scanCode;
+                break;
+            } else if (options[1] == ch) {
+                table[ch] = scanCode | Shift;
+                break;
+            }
+        }
+    }
+
+    return table;
+}
+
+constexpr auto PrintableCharsToScancodes = generatePrintableReverseLut();
+
 constexpr const char *scanCodeToKey(int scanCode) {
     if (scanCode < 0 || scanCode > sizeof(ScanCodeNames)) {
         return nullptr;
@@ -242,3 +270,11 @@ constexpr char scanCodeToPrintable(int scanCode, bool shift) {
 }
 
 int scanCodeFromKey(const std::string_view &name);
+
+constexpr int scanCodeFromPrintable(char ch) {
+    if (ch < 0) {
+        return -1;
+    }
+
+    return PrintableCharsToScancodes[ch];
+}

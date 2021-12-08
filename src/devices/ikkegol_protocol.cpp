@@ -246,7 +246,34 @@ ConfigPacket encodeMousePacket(const MouseConfiguration &config) {
     ConfigPacket packet {
         .type = CT_MOUSE,
     };
-    // TODO: not implemented
+
+    if (config.mode == MouseMode::Buttons) {
+        packet.mouse.buttons = 0;
+        for (auto button: config.buttons) {
+            switch (button) {
+                case MouseButton::Left:
+                    packet.mouse.buttons |= MB_LEFT;
+                    break;
+                case MouseButton::Right:
+                    packet.mouse.buttons |= MB_RIGHT;
+                    break;
+                case MouseButton::Middle:
+                    packet.mouse.buttons |= MB_MIDDLE;
+                    break;
+                case MouseButton::Back:
+                    packet.mouse.buttons |= MB_BACK;
+                    break;
+                case MouseButton::Forward:
+                    packet.mouse.buttons |= MB_FORWARD;
+                    break;
+            };
+        }
+    } else {
+        packet.mouse.mouseX = config.relativeX;
+        packet.mouse.mouseY = config.relativeY;
+        packet.mouse.mouseWheel = config.wheelDelta;
+    }
+
     return packet;
 }
 
@@ -254,7 +281,17 @@ ConfigPacket encodeTextPacket(const TextConfiguration &config) {
     ConfigPacket packet {
         .type = CT_TEXT,
     };
-    // TODO: not implemented
+
+    for (auto index = 0; index < config.text.size() && index < 38; ++index) {
+        auto code = scanCodeFromPrintable(config.text[index]);
+        if (code < 0) {
+            // Replacement code
+            code = PrintableCharsToScancodes[' '];
+        }
+
+        packet.string.string[index] = static_cast<char>(code);
+    }
+
     return packet;
 }
 
@@ -262,7 +299,67 @@ ConfigPacket encodeMediaPacket(const MediaConfiguration &config) {
     ConfigPacket packet {
         .type = CT_MEDIA,
     };
-    // TODO: not implemented
+
+    switch (config.button) {
+        case MultiMediaButton::DecreaseVolume:
+            packet.media.key = MEB_VOLUME_MINUS;
+            break;
+        case MultiMediaButton::IncreaseVolume:
+            packet.media.key = MEB_VOLUME_PLUS;
+            break;
+        case MultiMediaButton::Mute:
+            packet.media.key = MEB_MUTE;
+            break;
+        case MultiMediaButton::Play:
+            packet.media.key = MEB_PLAY;
+            break;
+        case MultiMediaButton::Forward:
+            packet.media.key = MEB_FORWARD;
+            break;
+        case MultiMediaButton::Next:
+            packet.media.key = MEB_NEXT;
+            break;
+        case MultiMediaButton::Stop:
+            packet.media.key = MEB_STOP;
+            break;
+        case MultiMediaButton::OpenPlayer:
+            packet.media.key = MEB_OPEN_PLAYER;
+            break;
+        case MultiMediaButton::OpenHomepage:
+            packet.media.key = MEB_OPEN_HOMEPAGE;
+            break;
+        case MultiMediaButton::StopWebPage:
+            packet.media.key = MEB_STOP_WEBPAGE;
+            break;
+        case MultiMediaButton::NavigateBack:
+            packet.media.key = MEB_BACK_BROWSE;
+            break;
+        case MultiMediaButton::NavigateForward:
+            packet.media.key = MEB_FORWARD_BROWSE;
+            break;
+        case MultiMediaButton::Refresh:
+            packet.media.key = MEB_REFRESH;
+            break;
+        case MultiMediaButton::OpenMyComputer:
+            packet.media.key = MEB_OPEN_MY_COMPUTER;
+            break;
+        case MultiMediaButton::OpenMail:
+            packet.media.key = MEB_OPEN_MAIL;
+            break;
+        case MultiMediaButton::OpenCalc:
+            packet.media.key = MEB_OPEN_CALC;
+            break;
+        case MultiMediaButton::OpenSearch:
+            packet.media.key = MEB_OPEN_SEARCH;
+            break;
+        case MultiMediaButton::Shutdown:
+            packet.media.key = MEB_SHUTDOWN;
+            break;
+        case MultiMediaButton::Sleep:
+            packet.media.key = MEB_SLEEP;
+            break;
+    }
+
     return packet;
 }
 
@@ -270,6 +367,45 @@ ConfigPacket encodeGamepadPacket(const GamepadConfiguration &config) {
     ConfigPacket packet {
         .type = CT_GAME,
     };
-    // TODO: not implemented
+
+    switch (config.button) {
+        case GamepadButton::Left:
+            packet.game.key = GK_LEFT;
+            break;
+        case GamepadButton::Right:
+            packet.game.key = GK_RIGHT;
+            break;
+        case GamepadButton::Up:
+            packet.game.key = GK_UP;
+            break;
+        case GamepadButton::Down:
+            packet.game.key = GK_DOWN;
+            break;
+        case GamepadButton::Button1:
+            packet.game.key = GK_BUTTON_1;
+            break;
+        case GamepadButton::Button2:
+            packet.game.key = GK_BUTTON_2;
+            break;
+        case GamepadButton::Button3:
+            packet.game.key = GK_BUTTON_3;
+            break;
+        case GamepadButton::Button4:
+            packet.game.key = GK_BUTTON_4;
+            break;
+        case GamepadButton::Button5:
+            packet.game.key = GK_BUTTON_5;
+            break;
+        case GamepadButton::Button6:
+            packet.game.key = GK_BUTTON_6;
+            break;
+        case GamepadButton::Button7:
+            packet.game.key = GK_BUTTON_7;
+            break;
+        case GamepadButton::Button8:
+            packet.game.key = GK_BUTTON_8;
+            break;
+    }
+
     return packet;
 }
