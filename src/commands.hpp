@@ -1,7 +1,8 @@
 #pragma once
 
-#include <args.hxx>
+#include <vector>
+#include <string>
 
-void listCommand(args::Subparser &parser);
-void showCommand(args::Subparser &parser);
-void setCommand(args::Subparser &parser);
+int listCommand(const std::string_view &name, const std::vector<std::string_view> &args);
+int showCommand(const std::string_view &name, const std::vector<std::string_view> &args);
+int setCommand(const std::string_view &name, const std::vector<std::string_view> &args);

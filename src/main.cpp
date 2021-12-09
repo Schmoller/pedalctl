@@ -1,22 +1,22 @@
-#include <iostream>
-#include <args.hxx>
-#include <libusb.h>
 #include "commands.hpp"
+#include <iostream>
+#include <libusb.h>
+#include <string>
+#include <vector>
 
-const char *ProgramDescription = "A command line application for configuring foot pedal input devices";
-const char *ListDescription = "Lists all available devices";
-const char *ShowDescription = "Shows the current configuration of a device";
-const char *SetDescription = "Sets the current configuration of a device";
+int parseOptions(const std::string_view &name, const std::vector<std::string_view> &);
 
 int main(int argc, char **argv) {
-    args::ArgumentParser parser(ProgramDescription);
+    std::vector<std::string_view> commandLine(argc - 1);
+    for (auto index = 1; index < argc; ++index) {
+        commandLine[index - 1] = std::string_view(argv[index]);
+    }
 
-    args::HelpFlag help(parser, "help", "Display's this information", { 'h', "help" });
-
-    args::Group commands(parser, "commands");
-    args::Command list(commands, "list", ListDescription, &listCommand);
-    args::Command show(commands, "show", ShowDescription, &showCommand);
-    args::Command set(commands, "set", SetDescription, &setCommand);
+    std::string_view name = argv[0];
+    auto lastSlash = name.find_last_of('/');
+    if (lastSlash != std::string_view::npos) {
+        name = name.substr(lastSlash + 1);
+    }
 
     auto result = libusb_init(nullptr);
     if (result < 0) {
@@ -24,18 +24,84 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    try {
-        parser.ParseCLI(argc, argv);
-    }
-    catch (args::Help &) {
-        std::cout << parser;
-    }
-    catch (args::Error &e) {
-        std::cerr << e.what() << std::endl << parser;
-        return 1;
-    }
+    auto exitCode = parseOptions(name, commandLine);
 
     libusb_exit(nullptr);
 
-    return 0;
+    return exitCode;
+}
+
+void printHelp(const std::string_view &name) {
+    std::cerr
+        << "Usage: " << name << " [OPTIONS] COMMAND { ARGS | help }" << std::endl
+        << std::endl
+        << "OPTIONS" << std::endl
+        << "  -h, --help\t\tShows this help" << std::endl
+        << "  -v, --version\t\tShows the version" << std::endl
+        << std::endl
+        << "COMMAND" << std::endl
+        << "  list\t\tLists all supported pedal devices" << std::endl
+        << "  show\t\tShows the current configuration of a device" << std::endl
+        << "  set\t\tChanges the configuration of a device" << std::endl
+        << std::endl;
+}
+
+void printVersion() {
+    std::cerr << "PedalCtl 0.1" << std::endl;
+}
+
+int parseOptions(const std::string_view &name, const std::vector<std::string_view> &args) {
+    if (args.empty()) {
+        printHelp(name);
+        return 1;
+    }
+
+    size_t nextArgIndex;
+    // Options first
+    for (nextArgIndex = 0; nextArgIndex < args.size(); ++nextArgIndex) {
+        auto &arg = args[nextArgIndex];
+
+        if (arg.empty()) {
+            continue;
+        }
+
+        // No more options after this
+        if (arg == "--" || arg[0] != '-') {
+            break;
+        }
+
+        if (arg == "-h" || arg == "--help") {
+            printHelp(name);
+            return 0;
+        } else if (arg == "-v" || arg == "--version") {
+            printVersion();
+            return 0;
+        } else {
+            std::cerr << "Unknown option " << arg << std::endl;
+            printHelp(name);
+            return 1;
+        }
+    }
+
+    if (nextArgIndex >= args.size()) {
+        std::cerr << "Missing command" << std::endl;
+        printHelp(name);
+        return 1;
+    }
+
+    // Process command
+    auto &commandName = args[nextArgIndex];
+    std::vector<std::string_view> commandArgs { args.begin() + static_cast<long>(nextArgIndex + 1), args.end() };
+
+    if (commandName == "list") {
+        return listCommand(name, commandArgs);
+    } else if (commandName == "show") {
+        return showCommand(name, commandArgs);
+    } else if (commandName == "set") {
+        return setCommand(name, commandArgs);
+    } else {
+        std::cerr << "Unknown command " << commandName << std::endl;
+        printHelp(name);
+        return 1;
+    }
 }
