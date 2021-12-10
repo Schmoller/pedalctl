@@ -331,7 +331,9 @@ bool IkkegolPedal::beginWrite() {
 bool IkkegolPedal::writeConfiguration(uint32_t pedal, const SharedConfiguration &config) {
     assert(config);
 
-    uint8_t requestInitiate[8] = { 0x01, 0x81, 0x08, static_cast<uint8_t>(pedal + 1), 0x00, 0x00, 0x00, 0x00 };
+    auto packet = encodeConfigPacket(config);
+
+    uint8_t requestInitiate[8] = { 0x01, 0x81, packet.size, static_cast<uint8_t>(pedal + 1), 0x00, 0x00, 0x00, 0x00 };
 
     int wrote;
     auto result = libusb_interrupt_transfer(
@@ -341,7 +343,6 @@ bool IkkegolPedal::writeConfiguration(uint32_t pedal, const SharedConfiguration 
         return false;
     }
 
-    auto packet = encodeConfigPacket(config);
     auto *requestBody = reinterpret_cast<uint8_t *>(&packet);
 
     auto pages = ((packet.size + 7) & ~7) >> 3;
