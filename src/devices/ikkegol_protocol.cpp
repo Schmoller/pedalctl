@@ -33,6 +33,8 @@ SharedConfiguration parseConfig(const ConfigPacket &packet) {
             return parseMediaConfig(packet);
         case CT_GAME:
             return parseGamepadConfig(packet);
+        case CT_UNCONFIGURED:
+            return {};
     }
 
     return configuration;

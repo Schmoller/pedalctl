@@ -192,6 +192,7 @@ const SharedConfiguration IkkegolPedal::getConfiguration(uint32_t pedal) const {
 
 void IkkegolPedal::setConfiguration(uint32_t pedal, const SharedConfiguration &config) {
     assert(pedal < pedalConfiguration.size());
+    assert(config);
     pedalConfiguration[pedal] = config;
     pedalModified[pedal] = true;
 }
@@ -224,6 +225,11 @@ bool IkkegolPedal::readPedalTriggerModes() {
     for (auto pedal = 0; pedal < capabilities.pedals; ++pedal) {
         auto mode = static_cast<TriggerMode>(buffer[pedal + 1]);
         auto &config = pedalConfiguration[pedal];
+
+        if (!config) {
+            // Pedal not-configured
+            continue;
+        }
 
         switch (mode) {
             case TM_RELEASE:
@@ -296,6 +302,7 @@ bool IkkegolPedal::save() {
         if (!pedalModified[pedal]) {
             continue;
         }
+
         if (!writeConfiguration(pedal, pedalConfiguration[pedal])) {
             return false;
         }
@@ -322,6 +329,8 @@ bool IkkegolPedal::beginWrite() {
 }
 
 bool IkkegolPedal::writeConfiguration(uint32_t pedal, const SharedConfiguration &config) {
+    assert(config);
+
     uint8_t requestInitiate[8] = { 0x01, 0x81, 0x08, static_cast<uint8_t>(pedal + 1), 0x00, 0x00, 0x00, 0x00 };
 
     int wrote;

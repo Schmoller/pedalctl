@@ -66,6 +66,7 @@ enum TriggerMode : unsigned char {
 };
 
 enum ConfigType : unsigned char {
+    CT_UNCONFIGURED = 0x00,
     CT_KEYBOARD = 0x01,
     CT_KEYBOARD_ONCE = 0x81,
     CT_MOUSE = 0x02,
