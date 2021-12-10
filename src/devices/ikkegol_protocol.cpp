@@ -232,7 +232,6 @@ ConfigPacket encodeKeyboardPacket(const KeyboardConfiguration &config) {
             packet.type = CT_KEYBOARD_ONCE;
         }
     }
-    // NOTE: What happens if its just "lcontrol" or something like that?
 
     if (index == 1) {
         // This is an interesting quirk of these devices.
