@@ -16,9 +16,12 @@ void printSetMouseHelp(const std::string_view &name) {
         << "  DEVICE\t\tThe device index to configure" << std::endl
         << "  PEDAL\t\t\tThe pedal name or index" << std::endl
         << "  BUTTONS\t\tOne of more mouse buttons to press. Multiple can be combined with +" << std::endl
-        << "  X\t\t\tAmount of horizontal movement to do. Must be between -100 and 100" << std::endl
+        << "  X\t\t\tAmount of horizontal movement to do. Must be between -100 and 100." << std::endl
+        << "  \t\t\tPositive values are to the right" << std::endl
         << "  Y\t\t\tAmount of vertical movement to do. Must be between -100 and 100" << std::endl
+        << "  \t\t\tPositive values are to the right" << std::endl
         << "  WHEEL\t\t\tNumber of notches to scroll. Must be between -100 and 100" << std::endl
+        << "  \t\t\tPositive values scroll the screen up" << std::endl
         << std::endl
         << "OPTIONS" << std::endl
         << "  -i, --invert\t\tInverts pedal activation. The button or movement will trigger as " << std::endl
