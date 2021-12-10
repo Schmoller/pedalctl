@@ -6,6 +6,7 @@
 #include "configuration/gamepad.hpp"
 #include "configuration/media.hpp"
 #include "configuration/dumper.hpp"
+#include "utils/command_line.hpp"
 #include <iostream>
 
 void printConfig(SharedConfiguration config);
@@ -38,17 +39,13 @@ int showCommand(const std::string_view &name, const std::vector<std::string_view
         printShowHelp(name);
         return 0;
     } else {
-        try {
-            deviceId = stoi(std::string(args[0]));
-            if (deviceId < 1) {
-                std::cerr << "Invalid device index " << args[0] << std::endl;
-                return 1;
-            }
-
-        } catch (std::invalid_argument &error) {
+        auto id = parseInt(args[0]);
+        if (!id || *id < 1) {
             std::cerr << "Invalid device index " << args[0] << std::endl;
             return 1;
         }
+
+        deviceId = *id;
     }
 
     auto device = findIkkegolDevice(deviceId);

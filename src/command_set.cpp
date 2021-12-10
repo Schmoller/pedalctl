@@ -2,6 +2,7 @@
 #include "command_set.hpp"
 #include "devices/ikkegol_pedal.hpp"
 #include "configuration/dumper.hpp"
+#include "utils/command_line.hpp"
 #include <iostream>
 
 void printSetHelp(const std::string_view &name) {
@@ -23,8 +24,7 @@ void printSetHelp(const std::string_view &name) {
         << std::endl;
 }
 
-std::optional<int> parsePedal(const std::string &rawPedal, const SharedIkkegolPedal &device);
-
+std::optional<int> parsePedal(const std::string_view &rawPedal, const SharedIkkegolPedal &device);
 
 int setCommand(const std::string_view &name, const std::vector<std::string_view> &args) {
     if (!args.empty() && args[0] == "help") {
@@ -38,31 +38,22 @@ int setCommand(const std::string_view &name, const std::vector<std::string_view>
         return 1;
     }
 
-    uint32_t deviceId;
-    uint32_t pedal;
-
     // Device
-    try {
-        deviceId = stoi(std::string(args[0]));
-        if (deviceId < 1) {
-            std::cerr << "Invalid device index " << args[0] << std::endl;
-            return 1;
-        }
-
-    } catch (std::invalid_argument &error) {
+    auto deviceId = parseInt(args[0]);
+    if (!deviceId || *deviceId < 1) {
         std::cerr << "Invalid device index " << args[0] << std::endl;
         return 1;
     }
 
-    auto device = findIkkegolDevice(deviceId);
+    auto device = findIkkegolDevice(*deviceId);
     if (!device) {
-        std::cerr << "Unable to find device " << deviceId << std::endl;
+        std::cerr << "Unable to find device " << *deviceId << std::endl;
         return 1;
     }
 
     // Pedal
-    auto optionalPedal = parsePedal(std::string(args[1]), device);
-    if (!optionalPedal) {
+    auto pedal = parsePedal(args[1], device);
+    if (!pedal) {
         std::cerr << "Invalid pedal name or index '" << args[1] << "'" << std::endl;
         std::cerr << "Possible values:" << std::endl;
         std::cerr << " ";
@@ -80,8 +71,6 @@ int setCommand(const std::string_view &name, const std::vector<std::string_view>
         std::cerr << std::endl;
         return 1;
     }
-
-    pedal = *optionalPedal;
 
     std::optional<SharedConfiguration> config;
     auto &commandName = args[2];
@@ -107,7 +96,12 @@ int setCommand(const std::string_view &name, const std::vector<std::string_view>
         return 1;
     }
 
-    device->setConfiguration(pedal, *config);
+    if (!device->load()) {
+        std::cerr << "Failed to load current config" << std::endl;
+        return 1;
+    }
+
+    device->setConfiguration(*pedal, *config);
 
     if (!device->save()) {
         std::cerr << "Unable to write configuration" << std::endl;
@@ -119,30 +113,24 @@ int setCommand(const std::string_view &name, const std::vector<std::string_view>
     return 0;
 }
 
-std::optional<int> parsePedal(const std::string &rawPedal, const SharedIkkegolPedal &device) {
-    uint32_t pedalIndex;
+std::optional<int> parsePedal(const std::string_view &rawPedal, const SharedIkkegolPedal &device) {
+    auto pedalIndex = parseInt(rawPedal);
 
-    try {
-        pedalIndex = stoi(rawPedal);
-        if (pedalIndex < 1 || pedalIndex > device->getPedalCount()) {
-            std::cerr << "Invalid pedal index. Expected an index between 1 and " << device->getPedalCount()
-                << std::endl;
-            exit(1);
-        }
-        --pedalIndex;
-    } catch (std::invalid_argument &error) {
-        auto found = false;
-        for (pedalIndex = 0; pedalIndex < device->getPedalCount(); ++pedalIndex) {
-            auto name = device->getPedalName(pedalIndex);
+    if (!pedalIndex) {
+        for (auto index = 0; index < device->getPedalCount(); ++index) {
+            auto name = device->getPedalName(index);
             if (!name.empty() && name == rawPedal) {
-                found = true;
-                break;
+                return index;
             }
         }
-        if (!found) {
+
+        return {};
+    } else {
+        if (*pedalIndex < 1 || *pedalIndex > device->getPedalCount()) {
+            std::cerr << "Invalid pedal index. Expected an index between 1 and " << device->getPedalCount()
+                << std::endl;
             return {};
         }
+        return *pedalIndex - 1;
     }
-
-    return pedalIndex;
 }
