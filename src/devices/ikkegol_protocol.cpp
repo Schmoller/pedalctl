@@ -246,6 +246,7 @@ ConfigPacket encodeKeyboardPacket(const KeyboardConfiguration &config) {
 
 ConfigPacket encodeMousePacket(const MouseConfiguration &config) {
     ConfigPacket packet {
+        .size = 8,
         .type = CT_MOUSE,
     };
 
@@ -284,6 +285,7 @@ ConfigPacket encodeTextPacket(const TextConfiguration &config) {
         .type = CT_TEXT,
     };
 
+    auto count = 0;
     for (auto index = 0; index < config.text.size() && index < 38; ++index) {
         auto code = scanCodeFromPrintable(config.text[index]);
         if (code < 0) {
@@ -292,13 +294,17 @@ ConfigPacket encodeTextPacket(const TextConfiguration &config) {
         }
 
         packet.string.string[index] = static_cast<char>(code);
+        ++count;
     }
+
+    packet.size = 2 + count;
 
     return packet;
 }
 
 ConfigPacket encodeMediaPacket(const MediaConfiguration &config) {
     ConfigPacket packet {
+        .size = 8,
         .type = CT_MEDIA,
     };
 
@@ -367,6 +373,7 @@ ConfigPacket encodeMediaPacket(const MediaConfiguration &config) {
 
 ConfigPacket encodeGamepadPacket(const GamepadConfiguration &config) {
     ConfigPacket packet {
+        .size = 8,
         .type = CT_GAME,
     };
 
