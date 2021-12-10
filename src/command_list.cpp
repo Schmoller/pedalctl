@@ -32,8 +32,13 @@ int listCommand(const std::string_view &name, const std::vector<std::string_view
     std::cout << std::endl;
 
     for (auto &device: devices) {
-        std::cout << " " << device->getId() << ": " << device->getModel() << " Version " << device->getVersion()
-            << std::endl;
+        std::cout << " " << device->getId() << ": ";
+
+        if (device->isValid()) {
+            std::cout << device->getModel() << " Version " << device->getVersion() << std::endl;
+        } else {
+            std::cout << "* Cannot read device - " << device->getLastError() << std::endl;
+        }
     }
 
     return 0;

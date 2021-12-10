@@ -28,6 +28,7 @@ add_executable(pedalctl
         src/configuration/keys.cpp
         src/configuration/dumper.cpp
         src/utils/command_line.cpp
+        src/utils/errors.cpp
         )
 
 target_link_libraries(pedalctl ${LIBUSB_1_LIBRARIES})

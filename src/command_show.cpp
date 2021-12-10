@@ -54,8 +54,13 @@ int showCommand(const std::string_view &name, const std::vector<std::string_view
         return 1;
     }
 
+    if (!device->isValid()) {
+        std::cerr << "Unable to load device. " << device->getLastError() << std::endl;
+        return 1;
+    }
+
     if (!device->load()) {
-        std::cerr << "Unable to read configuration" << std::endl;
+        std::cerr << "Unable to read configuration. " << device->getLastError() << std::endl;
         return 1;
     }
 

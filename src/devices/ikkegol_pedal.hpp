@@ -19,6 +19,8 @@ public:
 
     const std::string &getVersion() const { return version; }
 
+    const std::string &getLastError() const { return lastError; }
+
     int getId() const { return id; }
 
     std::string_view getPedalName(uint32_t pedal) const;
@@ -40,6 +42,8 @@ private:
     std::vector<bool> pedalModified;
     std::vector<bool> pedalTriggerTypeModified;
 
+    std::string lastError;
+
     void init();
     bool readModelAndVersion();
     bool readPedalTriggerModes();
@@ -47,6 +51,8 @@ private:
     SharedConfiguration readConfiguration(uint32_t pedal);
     bool writeConfiguration(uint32_t pedal, const SharedConfiguration &config);
     bool writePedalTriggerModes();
+
+    void updateLastError(int result);
 };
 
 typedef std::shared_ptr<IkkegolPedal> SharedIkkegolPedal;

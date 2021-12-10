@@ -2,6 +2,7 @@
 #include "../utils/usb_interface_lock.hpp"
 #include "ikkegol_protocol.hpp"
 #include "../configuration/keyboard.hpp"
+#include "../utils/errors.hpp"
 #include <cstring>
 #include <chrono>
 #include <thread>
@@ -32,10 +33,8 @@ std::vector<SharedIkkegolPedal> discoverIkkegolDevices() {
         }
         if (descriptor.idVendor == VendorId && descriptor.idProduct == ProductId) {
             auto footPedal = std::make_shared<IkkegolPedal>(device, nextId);
-            if (footPedal->isValid()) {
-                devices.push_back(footPedal);
-                ++nextId;
-            }
+            devices.push_back(footPedal);
+            ++nextId;
         }
     }
 
@@ -63,13 +62,11 @@ SharedIkkegolPedal findIkkegolDevice(uint32_t id) {
         }
         if (descriptor.idVendor == VendorId && descriptor.idProduct == ProductId) {
             auto footPedal = std::make_shared<IkkegolPedal>(device, nextId);
-            if (footPedal->isValid()) {
-                if (footPedal->getId() == id) {
-                    found = footPedal;
-                    break;
-                }
-                ++nextId;
+            if (footPedal->getId() == id) {
+                found = footPedal;
+                break;
             }
+            ++nextId;
         }
     }
 
@@ -79,7 +76,8 @@ SharedIkkegolPedal findIkkegolDevice(uint32_t id) {
 }
 
 IkkegolPedal::IkkegolPedal(libusb_device *device, int id) : id(id) {
-    libusb_open(device, &handle);
+    auto result = libusb_open(device, &handle);
+    updateLastError(result);
 
     if (handle != nullptr) {
         init();
@@ -124,6 +122,7 @@ bool IkkegolPedal::readModelAndVersion() {
         handle, ConfigEndpoint | LIBUSB_ENDPOINT_OUT, request, sizeof(request), &wrote, 100
     );
     if (wrote < 0 || result < 0) {
+        updateLastError(result);
         return false;
     }
 
@@ -215,6 +214,7 @@ bool IkkegolPedal::readPedalTriggerModes() {
         handle, ConfigEndpoint | LIBUSB_ENDPOINT_OUT, request, sizeof(request), &wrote, 100
     );
     if (wrote < 0 || result < 0) {
+        updateLastError(result);
         return false;
     }
 
@@ -222,12 +222,14 @@ bool IkkegolPedal::readPedalTriggerModes() {
     int read;
     result = libusb_interrupt_transfer(handle, ConfigEndpoint | LIBUSB_ENDPOINT_IN, buffer, 8, &read, 100);
     if (result < 0) {
+        updateLastError(result);
         return false;
     }
 
     if (buffer[0] > 8) {
         result = libusb_interrupt_transfer(handle, ConfigEndpoint | LIBUSB_ENDPOINT_IN, &buffer[8], 8, &read, 100);
         if (result < 0) {
+            updateLastError(result);
             return false;
         }
     }
@@ -262,6 +264,7 @@ SharedConfiguration IkkegolPedal::readConfiguration(uint32_t pedal) {
         handle, ConfigEndpoint | LIBUSB_ENDPOINT_OUT, request, sizeof(request), &wrote, 100
     );
     if (wrote < 0 || result < 0) {
+        updateLastError(result);
         return {};
     }
 
@@ -271,6 +274,7 @@ SharedConfiguration IkkegolPedal::readConfiguration(uint32_t pedal) {
     int read;
     result = libusb_interrupt_transfer(handle, ConfigEndpoint | LIBUSB_ENDPOINT_IN, buffer, 8, &read, 100);
     if (result < 0) {
+        updateLastError(result);
         return {};
     }
 
@@ -283,6 +287,7 @@ SharedConfiguration IkkegolPedal::readConfiguration(uint32_t pedal) {
                 handle, ConfigEndpoint | LIBUSB_ENDPOINT_IN, &buffer[page * 8], 8, &read, 100
             );
             if (result < 0) {
+                updateLastError(result);
                 return {};
             }
         }
@@ -343,6 +348,7 @@ bool IkkegolPedal::beginWrite() {
         handle, ConfigEndpoint | LIBUSB_ENDPOINT_OUT, request, sizeof(request), &wrote, 100
     );
     if (wrote < 0 || result < 0) {
+        updateLastError(result);
         return false;
     }
 
@@ -361,6 +367,7 @@ bool IkkegolPedal::writeConfiguration(uint32_t pedal, const SharedConfiguration 
         handle, ConfigEndpoint | LIBUSB_ENDPOINT_OUT, requestInitiate, sizeof(requestInitiate), &wrote, 100
     );
     if (wrote < 0 || result < 0) {
+        updateLastError(result);
         return false;
     }
 
@@ -372,6 +379,7 @@ bool IkkegolPedal::writeConfiguration(uint32_t pedal, const SharedConfiguration 
             handle, ConfigEndpoint | LIBUSB_ENDPOINT_OUT, &requestBody[page * 8], 8, &wrote, 100
         );
         if (wrote < 0 || result < 0) {
+            updateLastError(result);
             return false;
         }
     }
@@ -390,6 +398,7 @@ bool IkkegolPedal::writePedalTriggerModes() {
         handle, ConfigEndpoint | LIBUSB_ENDPOINT_OUT, requestInitiate, sizeof(requestInitiate), &wrote, 100
     );
     if (wrote < 0 || result < 0) {
+        updateLastError(result);
         return false;
     }
 
@@ -417,6 +426,7 @@ bool IkkegolPedal::writePedalTriggerModes() {
             handle, ConfigEndpoint | LIBUSB_ENDPOINT_OUT, &buffer[page * 8], 8, &wrote, 100
         );
         if (wrote < 0 || result < 0) {
+            updateLastError(result);
             return false;
         }
     }
@@ -432,4 +442,10 @@ std::string_view IkkegolPedal::getPedalName(uint32_t pedal) const {
     }
 
     return capabilities.pedalNames[pedal];
+}
+
+void IkkegolPedal::updateLastError(int result) {
+    if (result < 0) {
+        lastError = describeLibUSBError(result);
+    }
 }

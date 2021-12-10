@@ -51,6 +51,11 @@ int setCommand(const std::string_view &name, const std::vector<std::string_view>
         return 1;
     }
 
+    if (!device->isValid()) {
+        std::cerr << "Unable to load device. " << device->getLastError() << std::endl;
+        return 1;
+    }
+
     // Pedal
     auto pedal = parsePedal(args[1], device);
     if (!pedal) {
@@ -97,14 +102,14 @@ int setCommand(const std::string_view &name, const std::vector<std::string_view>
     }
 
     if (!device->load()) {
-        std::cerr << "Failed to load current config" << std::endl;
+        std::cerr << "Failed to load current config. " << device->getLastError() << std::endl;
         return 1;
     }
 
     device->setConfiguration(*pedal, *config);
 
     if (!device->save()) {
-        std::cerr << "Unable to write configuration" << std::endl;
+        std::cerr << "Unable to write configuration. " << device->getLastError() << std::endl;
         return 1;
     }
 
