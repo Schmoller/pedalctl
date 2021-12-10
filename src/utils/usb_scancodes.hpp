@@ -262,7 +262,7 @@ constexpr const char *scanCodeToKey(int scanCode) {
 }
 
 constexpr char scanCodeToPrintable(int scanCode, bool shift) {
-    if (scanCode < 0 || scanCode > sizeof(PrintableScanCodes)) {
+    if (scanCode < 0 || scanCode > sizeof(PrintableScanCodes) || !PrintableScanCodes[scanCode]) {
         return '\0';
     }
 
