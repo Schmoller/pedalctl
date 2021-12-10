@@ -105,7 +105,10 @@ void IkkegolPedal::init() {
 
     pedalModified.clear();
     pedalModified.resize(capabilities.pedals);
+    pedalTriggerTypeModified.clear();
+    pedalTriggerTypeModified.resize(capabilities.pedals);
     std::fill(pedalModified.begin(), pedalModified.end(), false);
+    std::fill(pedalTriggerTypeModified.begin(), pedalTriggerTypeModified.end(), false);
 }
 
 bool IkkegolPedal::readModelAndVersion() {
@@ -175,6 +178,7 @@ bool IkkegolPedal::load() {
     }
 
     std::fill(pedalModified.begin(), pedalModified.end(), false);
+    std::fill(pedalTriggerTypeModified.begin(), pedalTriggerTypeModified.end(), false);
 
     if (!readPedalTriggerModes()) {
         return false;
@@ -193,6 +197,12 @@ const SharedConfiguration IkkegolPedal::getConfiguration(uint32_t pedal) const {
 void IkkegolPedal::setConfiguration(uint32_t pedal, const SharedConfiguration &config) {
     assert(pedal < pedalConfiguration.size());
     assert(config);
+
+    auto &oldConfig = pedalConfiguration[pedal];
+    if (oldConfig && oldConfig->trigger != config->trigger) {
+        pedalTriggerTypeModified[pedal] = true;
+    }
+
     pedalConfiguration[pedal] = config;
     pedalModified[pedal] = true;
 }
@@ -308,8 +318,19 @@ bool IkkegolPedal::save() {
         }
     }
 
-    // TODO: Update trigger type
+    bool anyTriggerModified = false;
+    for (auto modified: pedalTriggerTypeModified) {
+        anyTriggerModified = anyTriggerModified || modified;
+    }
+
+    if (anyTriggerModified) {
+        if (!writePedalTriggerModes()) {
+            return false;
+        }
+    }
+
     std::fill(pedalModified.begin(), pedalModified.end(), false);
+    std::fill(pedalTriggerTypeModified.begin(), pedalTriggerTypeModified.end(), false);
     readPedalTriggerModes();
     return true;
 }
@@ -349,6 +370,51 @@ bool IkkegolPedal::writeConfiguration(uint32_t pedal, const SharedConfiguration 
     for (auto page = 0; page < pages; ++page) {
         result = libusb_interrupt_transfer(
             handle, ConfigEndpoint | LIBUSB_ENDPOINT_OUT, &requestBody[page * 8], 8, &wrote, 100
+        );
+        if (wrote < 0 || result < 0) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool IkkegolPedal::writePedalTriggerModes() {
+    auto payloadSize = static_cast<uint8_t>(capabilities.pedals + 1);
+    uint8_t requestInitiate[8] = {
+        0x01, 0x85, payloadSize, 0x00, 0x00, 0x00, 0x00, 0x00
+    };
+
+    int wrote;
+    auto result = libusb_interrupt_transfer(
+        handle, ConfigEndpoint | LIBUSB_ENDPOINT_OUT, requestInitiate, sizeof(requestInitiate), &wrote, 100
+    );
+    if (wrote < 0 || result < 0) {
+        return false;
+    }
+
+    uint8_t buffer[16] {};
+    buffer[0] = payloadSize;
+
+    for (auto pedal = 0; pedal < capabilities.pedals; ++pedal) {
+        auto &config = pedalConfiguration[pedal];
+        if (config) {
+            if (config->trigger == Trigger::OnPress) {
+                buffer[1 + pedal] = TM_PRESS;
+            } else if (config->trigger == Trigger::OnRelease) {
+                buffer[1 + pedal] = TM_RELEASE;
+            } else {
+                buffer[1 + pedal] = TM_PRESS;
+            }
+        } else {
+            buffer[1 + pedal] = TM_PRESS;
+        }
+    }
+
+    auto pages = ((payloadSize + 7) & ~7) >> 3;
+    for (auto page = 0; page < pages; ++page) {
+        result = libusb_interrupt_transfer(
+            handle, ConfigEndpoint | LIBUSB_ENDPOINT_OUT, &buffer[page * 8], 8, &wrote, 100
         );
         if (wrote < 0 || result < 0) {
             return false;

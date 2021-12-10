@@ -38,6 +38,7 @@ private:
     Capabilities capabilities;
     std::vector<SharedConfiguration> pedalConfiguration;
     std::vector<bool> pedalModified;
+    std::vector<bool> pedalTriggerTypeModified;
 
     void init();
     bool readModelAndVersion();
@@ -45,6 +46,7 @@ private:
     bool beginWrite();
     SharedConfiguration readConfiguration(uint32_t pedal);
     bool writeConfiguration(uint32_t pedal, const SharedConfiguration &config);
+    bool writePedalTriggerModes();
 };
 
 typedef std::shared_ptr<IkkegolPedal> SharedIkkegolPedal;
