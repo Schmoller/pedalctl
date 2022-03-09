@@ -47,7 +47,7 @@ void printHelp(const std::string_view &name) {
 }
 
 void printVersion() {
-    std::cerr << "PedalCtl 0.1" << std::endl;
+    std::cerr << "PedalCtl 0.2" << std::endl;
 }
 
 int parseOptions(const std::string_view &name, const std::vector<std::string_view> &args) {
