@@ -122,8 +122,9 @@ Updates the configuration of a device.
 ## ⌨️ Supported Models <a name="supported_models"></a>
 
 - iKKEGOL
-    - FS2020U1IR (3 pedal model)
-    - More to come
+  - FS2020U1IR (3 pedal model)
+  - FS2017U1IR (1 pedal model)
+  - More to come
 
 _For a device to be supported, the configuration protocol needs to be reverse engineered which requires someone working
 on this project to have that device. Unless there happens to be a spec for the device._

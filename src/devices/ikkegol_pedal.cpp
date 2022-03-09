@@ -173,7 +173,7 @@ bool IkkegolPedal::load() {
     USBInterfaceLock interfaceLock(handle, ConfigInterface);
 
     for (auto pedal = 0; pedal < capabilities.pedals; ++pedal) {
-        pedalConfiguration[pedal] = readConfiguration(pedal);
+        pedalConfiguration[pedal] = readConfiguration(pedal + capabilities.firstPedalIndex);
     }
 
     std::fill(pedalModified.begin(), pedalModified.end(), false);
@@ -235,7 +235,7 @@ bool IkkegolPedal::readPedalTriggerModes() {
     }
 
     for (auto pedal = 0; pedal < capabilities.pedals; ++pedal) {
-        auto mode = static_cast<TriggerMode>(buffer[pedal + 1]);
+        auto mode = static_cast<TriggerMode>(buffer[pedal + capabilities.firstPedalIndex + 1]);
         auto &config = pedalConfiguration[pedal];
 
         if (!config) {
@@ -318,7 +318,7 @@ bool IkkegolPedal::save() {
             continue;
         }
 
-        if (!writeConfiguration(pedal, pedalConfiguration[pedal])) {
+        if (!writeConfiguration(pedal + capabilities.firstPedalIndex, pedalConfiguration[pedal])) {
             return false;
         }
     }
@@ -388,7 +388,7 @@ bool IkkegolPedal::writeConfiguration(uint32_t pedal, const SharedConfiguration 
 }
 
 bool IkkegolPedal::writePedalTriggerModes() {
-    auto payloadSize = static_cast<uint8_t>(capabilities.pedals + 1);
+    auto payloadSize = static_cast<uint8_t>(capabilities.pedals + capabilities.firstPedalIndex + 1);
     uint8_t requestInitiate[8] = {
         0x01, 0x85, payloadSize, 0x00, 0x00, 0x00, 0x00, 0x00
     };
@@ -409,14 +409,14 @@ bool IkkegolPedal::writePedalTriggerModes() {
         auto &config = pedalConfiguration[pedal];
         if (config) {
             if (config->trigger == Trigger::OnPress) {
-                buffer[1 + pedal] = TM_PRESS;
+                buffer[1 + pedal + capabilities.firstPedalIndex] = TM_PRESS;
             } else if (config->trigger == Trigger::OnRelease) {
-                buffer[1 + pedal] = TM_RELEASE;
+                buffer[1 + pedal + capabilities.firstPedalIndex] = TM_RELEASE;
             } else {
-                buffer[1 + pedal] = TM_PRESS;
+                buffer[1 + pedal + capabilities.firstPedalIndex] = TM_PRESS;
             }
         } else {
-            buffer[1 + pedal] = TM_PRESS;
+            buffer[1 + pedal + capabilities.firstPedalIndex] = TM_PRESS;
         }
     }
 

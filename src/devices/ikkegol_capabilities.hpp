@@ -5,6 +5,7 @@
 
 struct Capabilities {
     uint32_t pedals { 1 };
+    uint32_t firstPedalIndex { 0 };
     const char **pedalNames {};
 };
 
